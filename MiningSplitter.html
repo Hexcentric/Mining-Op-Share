@@ -1,0 +1,36 @@
+<head>
+  <title>MiningSplitter</title>
+</head>
+
+<body>
+  {{> rockPriceDisplay}}
+</body>
+
+<template name="rockPriceDisplay">
+  {{#each rock}}
+    {{> rock}}
+  {{/each}}
+  {{> addRock}}
+</template>
+
+<template name="rock">
+  <div class="rock">
+    <span class="name">{{name}}</span>
+    <span class="density">{{density}}</span>
+    <span class="price">{{price}}</span>
+    <span class="value">{{value}}</span>
+  </div>      
+</template>
+
+<template name="addRock">
+  <div class="addRock">
+    Add rock price: 
+    <select required id="rockDropDown">>
+      <option value="null"></option>
+      {{#each rock}}
+        <option value="{{this.name}}">{{this.name}}</option>
+      {{/each}}
+      <input type="text" id="addRockPrice">
+      <input type="button" class="addRock" value="Add Rock Price">
+    </select>
+</template>
