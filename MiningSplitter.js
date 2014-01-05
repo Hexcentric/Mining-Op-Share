@@ -73,7 +73,7 @@ if (Meteor.isClient) {
     Template.editPrice.nameFinder = function () {
 	return RockPrices.findOne({_id:Session.get("selected_rock")}).name;
     };
-    Template.operations.events({
+    Template.operation.events({
 	'click' : function () {
 	    if (Session.equals("selected_op",this._id)) {
 		
@@ -83,7 +83,7 @@ if (Meteor.isClient) {
 	    };
 	}
     });
-    Template.operations.selected = function () {
+    Template.operation.selected = function () {
 	return Session.equals("selected_op",this._id) ? "selected" : '';
     };
     Template.Main.events({

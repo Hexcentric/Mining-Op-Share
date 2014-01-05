@@ -35,7 +35,7 @@
   <br>
   <div class="operations">
     {{#each operations}}
-      {{> operations}}
+      {{> operation}}
     {{/each}}
     {{#if session "selected_op"}}
       <input type="button" class="useOp" value="Use Selected Operation">
@@ -47,9 +47,9 @@
   </div>
 </template>
 
-<template name="operations">
+<template name="operation">
   <div class="operation {{selected}}">
-    <span class="operation">{{name}}</span>
+    <span class="operationName">{{name}}</span>
     <span class="isBoss">{{isBoss}}</span>
   </div>
 </template>
