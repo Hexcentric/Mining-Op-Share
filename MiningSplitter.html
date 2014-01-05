@@ -3,18 +3,123 @@
 </head>
 
 <body>
-  {{> rockPriceDisplay}}
+  {{loginButtons}}<br><br>
+  {{#if currentUser}}
+    {{> Main}}
+  {{/if}}}
 </body>
 
+<template name="Main">
+  <input type="button" class="showOps" value="{{showHideOps}} Operation Details"><br>
+  {{#if session "show_ops"}}
+    {{> opDisplay}}
+  {{/if}}
+  <br>
+    <input type="button" class="showAddRock" value="{{showHideRocks}} Rock Price Table"><br>
+    {{#if session "add_rock"}}
+      {{> rockPriceDisplay}}
+    {{/if}}
+    <br>
+    <input type="button" class="showPlayers" value="{{showHidePlayers}} Player Table"><br>
+    {{#if session "show_players"}}
+      {{> players}}
+    {{/if}}
+    <br>
+    <input type="button" class="showHauls" value="{{showHideHauls}} Haul Table"><br>
+    {{#if session "show_hauls"}}
+      {{> hauls}}
+    {{/if}}
+</template>
+
+<template name="opDisplay">
+  <br>
+  <div class="operations">
+    {{#each operations}}
+      {{> operations}}
+    {{/each}}
+    {{#if session "selected_op"}}
+      <input type="button" class="useOp" value="Use Selected Operation">
+    {{/if}}
+    <br>
+    Add New Operation:<br><br>
+    <input type="text" id="newOpName">
+    <input type="button" class="addOp" value="Start Operation">
+  </div>
+</template>
+
+<template name="operations">
+  <div class="operation {{selected}}">
+    <span class="operation">{{name}}</span>
+    <span class="isBoss">{{isBoss}}</span>
+  </div>
+</template>
+
+<template name="players">
+  <br>
+  <div class="playersTitle">
+    <span class="nameTitle">Name</span>
+    <span class="roleTitle">Role</span>
+  </div>
+  <div class="players">
+    {{#each players}}
+      {{> player}}
+    {{/each}}
+    <br>
+    {{addEdit}} Player:
+    <br>
+    <input type="text" id="newPlayerName" value="{{playerName.name}}">
+    <select id="playerRole">
+      <option value="Miner">Miner</option>
+      <option value="Hauler">Hauler</option>
+      <option value="Security">Security</option>
+    </select>
+    <input type="button" class="{{addEdit}}Player" value="{{addEdit}} Player">
+    {{#if session "selected_player"}}
+      <input type="button" class="removePlayer" value="Remove Player">
+      {{/if}}
+  </div>
+</template>
+
+<template name="player">
+  <div class="player {{selected}}">
+    <span class="name">{{name}}</span>
+    <span class="role">{{role}}</span>
+  </div>
+</template>
+
+<template name="hauls">
+  <br>
+  <div class="hauls">
+    {{#each hauls}}
+      {{> haul}}
+    {{/each}}
+  </div>
+</template>
+
+<template name="haul">
+</template>
+
 <template name="rockPriceDisplay">
+  <br>
+  <div class="rockLabel">
+    <span class="name">Rock Name</span>
+    <span class="density">Density</span>
+    <span class="price">Price per Rock</span>
+    <span class="value">Price per m^3</span>
+  </div>
   {{#each rock}}
     {{> rock}}
   {{/each}}
-  {{> addRock}}
+  <br>
+  {{#if session "selected_rock"}}
+    {{> editPrice}}
+  {{else}}
+    {{> addRock}}
+  {{/if}}
 </template>
 
 <template name="rock">
-  <div class="rock">
+  <div class="rock {{selected}}">
     <span class="name">{{name}}</span>
     <span class="density">{{density}}</span>
     <span class="price">{{price}}</span>
@@ -22,9 +127,17 @@
   </div>      
 </template>
 
+<template name="editPrice">
+  <div class="priceEditor">
+    <span class="name">New price for: <br>{{nameFinder}}</span>
+    <input type="text" id="newPrice">
+    <input type="button" class="editRock" value="Submit New Price">
+  </div>
+</template>
+
 <template name="addRock">
   <div class="addRock">
-    Add rock price: 
+    Add rock price: <br>
     <select required id="rockDropDown">>
       <option value="null"></option>
       {{#each rock}}

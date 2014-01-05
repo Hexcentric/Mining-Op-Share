@@ -1,1 +1,118 @@
 /* CSS declarations go here */
+.rock {
+    border-style:solid;
+    border-top:0px;
+    border-width:2px;
+    padding:5px;
+    max-width:600px;
+}
+.rock .name {
+    display: inline-block;
+    width:30%;
+}
+.rock .density {
+    display:inline-block;
+    width:15%;
+}
+.rock .price {
+    display:inline-block;
+    width:25%;
+}
+.rock .value {
+    display:inline-block;
+    width:25%;
+}
+.rock.selected {
+    background-color: yellow;
+}
+
+.rockLabel {
+    border-style:solid;
+    border-width:2px;
+    padding:5px;
+    max-width:600px;
+}
+.rockLabel .name {
+    display: inline-block;
+    width:30%;
+}
+.rockLabel .density {
+    display:inline-block;
+    width:15%;
+}
+.rockLabel .price {
+    display:inline-block;
+    width:25%;
+}
+.rockLabel .value {
+    display:inline-block;
+    width:25%;
+}
+
+.playersTitle {
+    border-style:solid;
+    border-width:2px;
+    padding:5px;
+    max-width:400px;
+}
+.playersTitle .nameTitle {
+    display:inline-block;
+    width:70%;
+}
+.playersTitle .roleTitle {
+    display:inline-block;
+    width:25%;
+}
+
+.player {
+    border-style:solid;
+    border-width:2px;
+    padding:5px;
+    border-top:0px;
+    max-width:400px;
+}
+.player .name {
+    display:inline-block;
+    width:70%;
+}
+.player .role {
+    display:inline-block;
+    width:25%;
+}
+.player.selected {
+    background-color:yellow;
+}
+
+.operation {
+    border-style:solid;
+    border-width:2px;
+    padding:5px;
+    border-top:0px;
+    max-width:400;
+}
+.operation .name {
+    display:inline-block;
+    max-width:70%;
+}    
+.operation .boss {
+    display:inline-block;
+    max-width:25%;
+}
+.operational.selected {
+    background-color:yellow;
+}
+.operationTitle {
+    border-style:solid;
+    border-width:2px;
+    padding:5px;
+    border-top:0px;
+    max-width:400;
+}
+.operationTitle .name {
+    display:inline-block;
+    max-width:70%;
+}    
+.operationTitle .boss {
+    display:inline-block;
+    max-width:25%;
+}
