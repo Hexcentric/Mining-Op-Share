@@ -57,11 +57,15 @@
 }
 .playersTitle .nameTitle {
     display:inline-block;
-    width:70%;
+    width:35%;
 }
 .playersTitle .roleTitle {
     display:inline-block;
     width:25%;
+}
+.playersTitle .cashTitle {
+    display:inline-block;
+    width:35%;
 }
 
 .player {
@@ -73,11 +77,15 @@
 }
 .player .name {
     display:inline-block;
-    width:70%;
+    width:35%;
 }
 .player .role {
     display:inline-block;
     width:25%;
+}
+.player .payout {
+    display:inline-block;
+    width:35%;
 }
 .player.selected {
     background-color:yellow;
@@ -88,31 +96,128 @@
     border-width:2px;
     padding:5px;
     border-top:0px;
-    max-width:400;
+    max-width:400px;
 }
 .operation .name {
     display:inline-block;
-    max-width:70%;
+    width:60%;
 }    
-.operation .boss {
+.operation .isBoss {
     display:inline-block;
-    max-width:25%;
+    width:35%;
 }
-.operational.selected {
+.operation.selected {
     background-color:yellow;
 }
 .operationTitle {
     border-style:solid;
     border-width:2px;
     padding:5px;
-    border-top:0px;
-    max-width:400;
+    max-width:400px;
 }
 .operationTitle .name {
     display:inline-block;
-    max-width:70%;
+    width:60%;
 }    
-.operationTitle .boss {
+.operationTitle .isBoss {
     display:inline-block;
-    max-width:25%;
+    width:35%;
+}
+
+.haul {
+    border-style:solid;
+    border-width:2px;
+    padding:5px;
+    border-top:0px;
+    max-width:400px;
+}
+.haul .haulNumber {
+    display:inline-block;
+    width:25%;
+}
+.haul.selected {
+    background-color:yellow;
+}
+.haulHeader {
+    border-style:solid;
+    border-width:2px;
+    padding:5px;
+    max-width:400px;
+}
+.haulHeader .haulHead {
+    display:inline-block;
+    width:25%;
+}
+.rockDataHeader {
+    border-style:solid;
+    border-width:2px;
+    padding:5px;
+    margin-left:50px;
+    max-width:400px;
+}
+.applyHaulData {
+    margin-left:50px;
+}
+.rockDataHeader .rockDataName {
+    display:inline-block;
+    width:35%;
+}
+.rockDataHeader .rockNumbers {
+    display:inline-block;
+    width:30%;
+}
+.rockData {
+    border-style:solid;
+    border-width:2px;
+    border-top:0px;
+    margin-left:50px;
+    padding:5px;
+    max-width:400px;
+}
+.rockData .rockName {
+    display:inline-block;
+    width:35%;
+}
+.rockData .rockNum {
+    display:inline-block;
+    width:30%;
+}
+.minerDataHeader {
+    border-style:solid;
+    border-width:2px;
+    margin-left:50px;
+    padding:5px;
+    max-width:400px;
+}
+.minerDataHeader .minerHead {
+    display:inline-block;
+    width:30%;
+}
+.minerDataHeader .cashHead {
+    display:inline-block;
+    width:30%;
+}
+.minerDataHeader .effort {
+    display:inline-block;
+    width:35%;
+}
+.miner {
+    border-style:solid;
+    border-width:2px;
+    border-top:0px;
+    margin-left:50px;
+    padding:5px;
+    max-width:400px;
+}
+.miner .minerName {
+    display:inline-block;
+    width:30%;
+}
+.miner .cash {
+    display:inline-block;
+    width:30%;
+}
+.miner .minerEffort {
+    display:inline-block;
+    width:35%;
 }
