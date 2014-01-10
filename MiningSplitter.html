@@ -72,8 +72,9 @@
 <template name="player">
   <div class="player {{selected}}">
     <span class="name">{{name}}</span>
+    <span class="payType">{{payType}}</span>
     <span class="role">{{role}}</span>
-    <span class="cash">{{cash}}</span>
+    <span class="pay">{{{pay this}}}</span>
   </div>
 </template>
 
@@ -81,6 +82,7 @@
   <br>
   <div class="playersTitle">
     <span class="nameTitle">Name</span>
+    <span class="payTitle">Pay Type</span>
     <span class="roleTitle">Role</span>
     <span class="payout">Pay Out</span>
   </div>
@@ -94,12 +96,17 @@
       <br>
       <input type="text" id="newPlayerName" value="{{playerName.name}}">
       <select id="playerRole">
-        <option value="Miner">Miner</option>
-        <option value="Hauler">Hauler</option>
-        <option value="Security">Security</option>
+        <option value="Miner" {{selected "role" "Miner"}}>Miner</option>
+        <option value="Hauler" {{selected "role" "Hauler"}}>Hauler</option>
+        <option value="Security" {{selected "role" "Security"}}>Security</option>
+      </select>
+      <select id="payout">
+	<option value="Cash" {{selected "payout" "Cash"}}>Cash</option>
+	<option value="Ore" {{selected "payout" "Ore"}}>Ore</option>
       </select>
       <input type="button" class="{{addEdit}}Player" value="{{addEdit}} Player">
       {{#if session "selected_player"}}
+        <input type="button" class="makeBoss" value="Make Player Boss of Op">
         <input type="button" class="removePlayer" value="Remove Player">
       {{/if}}
     {{/if}}
@@ -208,7 +215,7 @@
 <template name="editPrice">
   <div class="priceEditor">
     <span class="name">New price for: <br>{{nameFinder}}</span>
-    <input type="text" id="newPrice">
+    <input type="text" id="newPrice" value="{{priceFinder}}">
     <input type="button" class="editRock" value="Submit New Price">
   </div>
 </template>

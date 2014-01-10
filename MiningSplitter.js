@@ -8,92 +8,105 @@ Hauls = new Meteor.Collection("Hauls")
     
 
 var calcCash = function(    ) {
-    var op = Ops.findOne({_id:Session.get("using_op")})
-    Hauls.find({op:op._id}).forEach(function (Haul) {
-	var miners = Haul.miners;
-	var totalEffort = Haul.totalEffort;
-	var op = Ops.findOne({_id:Session.get("using_op")});
-	var rocks = Haul.rocks;
-	var totalCash = 0;
-	for (i=0;i<rocks.length;i++) {
-	    rocks[i].cash = RockPrices.findOne({op:op._id,name:rocks[i].name}).price*rocks[i].num
-	    totalCash += rocks[i].cash
+    if (Session.get("using_op")) {
+	var op = Ops.findOne({_id:Session.get("using_op")})
+	console.log(op.boss,Meteor.userId());
+	if (op.boss==Meteor.userId()) {
+	    Session.set("isBoss",true);
+	    Hauls.find({op:op._id}).forEach(function (Haul) {
+		var miners = Haul.miners;
+		var totalEffort = Haul.totalEffort;
+		var op = Ops.findOne({_id:Session.get("using_op")});
+		var rocks = Haul.rocks;
+		var totalCash = 0;
+		for (i=0;i<rocks.length;i++) {
+		    rocks[i].cash = RockPrices.findOne({op:op._id,name:rocks[i].name}).price*rocks[i].num
+		    totalCash += rocks[i].cash
+		};
+		for (i=0;i<miners.length;i++) {
+		    var ratio = parseFloat(miners[i].effort) / parseFloat(totalEffort)
+		    var cash = (totalCash * ratio).toFixed(2)
+		    var rockets = {}
+		    for (j=0;j<rocks.length;j++) {
+			var rock = rocks[j]
+			rockets[rock.name] = ratio*rock.num
+		    };
+		    cash = isNaN(cash)? 0:cash;
+		    miners[i].cash = cash
+		    miners[i].rocks = rockets;
+		};
+		
+		Hauls.update(Haul._id, {$set:
+					{cash:totalCash
+					 ,miners:miners
+					 ,rocks:rocks}
+				       });
+	    });
+	    playerCash = {};
+	    Players.find({op:op._id}).forEach(function (player) {
+		playerCash[player.name] = [0,{}];
+	    })
+	    Hauls.find({op:op._id}).forEach(function (haul) {
+		var miners = haul.miners;
+		for (i=0;i<miners.length;i++) {
+		    var name = miners[i].name
+		    var cash = miners[i].cash;
+		    var rocks = miners[i].rocks;
+		    playerCash[name][0] += parseFloat(cash)
+		    var keys = Object.keys(rocks);
+		    for (j=0;j<keys.length;j++) {
+			if (playerCash[name][1][keys[j]]) {
+			    playerCash[name][1][keys[j]] += parseFloat(rocks[keys[j]])
+			} else {
+			    playerCash[name][1][keys[j]] = parseFloat(rocks[keys[j]])
+			};
+		    };
+		}
+	    });
+	    var miners = Hauls.findOne({op:op._id}).miners;
+	    for (i=0;i<miners.length;i++) {
+		var miner = miners[i].name;
+		var player = Players.findOne({name:miner,op:op._id});
+		if (player.payType=="Cash") {
+		    var cash = playerCash[miner][0].toFixed(2);
+		    Players.update(player._id,{$set:
+					       {payout:cash}
+					      });
+		} else {
+		    var rocks = playerCash[miner][1];
+		    Players.update(player._id,{$set:
+					       {payout:rocks}
+					      });
+		};
+	    };
 	};
-	for (i=0;i<miners.length;i++) {
-	    miners[i].cash = (totalCash * miners[i].effort / totalEffort).toFixed(2)
-	    
-	};
-	    
-	Hauls.update(Haul._id, {$set:
-			   {cash:totalCash
-			    ,miners:miners
-			    ,rocks:rocks}
-			  });
-    });
-    playerCash = {};
-    Players.find({op:op._id}).forEach(function (player) {
-	playerCash[player.name] = 0;
-    })
-    
-    Hauls.find({op:op._id}).forEach(function (haul) {
-	var miners = haul.miners;
-	for (i=0;i<miners.length;i++) {
-	    var name = miners[i].name
-	    var cash = miners[i].cash;
-	    playerCash[name] += parseFloat(cash)
-	}
-    });
-    var miners = Hauls.findOne({op:op._id}).miners;
-    for (i=0;i<miners.length;i++) {
-	var miner = miners[i].name
-	Players.update(Players.findOne({name:miner,op:op._id})._id,{$set:
-				  {cash:playerCash[miner].toFixed(2)}
-				 });
-	
     };
 };
 
 if (Meteor.isClient) {
-    change = function (miner) {
-//	var nuEffort = document.getElementById(miner.id).value;
-//	var miner = miner.id.slice(0,-7);
-//	var Haul = Hauls.findOne({_id:Session.get("selected_haul")});
-//	var miners = Session.get("miners");
-//	for (i=0;i<miners.length;i++) {
-//	    if (miners[i].name==miner) {
-//		miners[i].effort = nuEffort;
-//	    };
-//	};
-//	Hauls.update(Haul._id,{$set:
-//			      {miners:miners}
-//			      });
-//	Session.set("miners",miners);
-//	console.log("DUN");
-    };
-
     Accounts.ui.config({passwordSignupFields: 'USERNAME_ONLY'});
-    Session.set("add_rock",false);
-    Session.set("show_hauls",true);
-    Session.set("show_players",false);  
-    Session.set("show_ops",true);
-    Session.set("selected_op",undefined);
     Session.set("using_op",undefined);
-    Session.set("selected_rock",undefined);
-    Session.set("selected_player",undefined);
-    Session.set("edit_price",undefined);
     Session.set("isBoss",false);
+    var setNull = function () {
+	Session.set("add_rock",false);
+	Session.set("show_hauls",false);
+	Session.set("show_players",false);  
+	Session.set("show_ops",false);
+	Session.set("selected_op",undefined);
+	Session.set("selected_rock",undefined);
+	Session.set("selected_player",undefined);
+	Session.set("edit_price",undefined);
+	Session.set("selected_haul");
+    };
+    setNull();
+    Session.set("shosw_ops",true);
     Meteor.subscribe("Rocks");
     Meteor.subscribe("RockPrices");
     Meteor.subscribe("Players");
     Meteor.subscribe("Ops");
     Meteor.subscribe("Hauls");
-//    Ops.insert({name:"First"
-//		,members:[Meteor.userId()]
-//	       });
-//
-//    Meteor.users.update(Meteor.userId(),{$set:
-//					 {op:1}
-//					});
+    Meteor.subscribe("userdata");
+    window.setInterval(calcCash,5000);
     Handlebars.registerHelper('session', function(key,extras) {
 	return Session.get(key);
     });
@@ -101,7 +114,7 @@ if (Meteor.isClient) {
 	return RockPrices.find({op:Session.get("using_op")},{sort: {value:-1}});
     };	
     Template.addRock.rock = function () {
-	return Rocks.find({});
+	return Rocks.find({},{sort:{name:1}});
     };
     Template.Main.showHideRocks = function () {
 	return Session.get("add_rock")?"Hide":"Show";
@@ -127,15 +140,6 @@ if (Meteor.isClient) {
 	});
 	return returning;
     };
-//    haulRocks = function (number) {
-//	console.log("lose")
-//	Session.set("haul_rocks_"+number,document.getElementById("showRockCheck"+number).checked);
-  //  };
-//    Template.haul.haulRocksShown = function (number) {
-//	console.log("win");
-//	return Session.get("haul_rocks_"+number);
-//    };
-//    Template.haul.
     Template.Main.showHideHauls = function () {
 	return Session.get("show_hauls")?"Hide":"Show";
     };
@@ -144,6 +148,9 @@ if (Meteor.isClient) {
     };
     Template.editPrice.nameFinder = function () {
 	return RockPrices.findOne({_id:Session.get("selected_rock")}).name;
+    };
+    Template.editPrice.priceFinder = function () {
+	return RockPrices.findOne({_id:Session.get("selected_rock")}).price;
     };
     Template.operation.events({
 	'click' : function () {
@@ -185,19 +192,25 @@ if (Meteor.isClient) {
     Template.opDisplay.events({
 	'click input.addOp' : function () {
 	    var opName = document.getElementById("newOpName").value;
-	    Ops.insert({name:opName
-			,boss:Meteor.userId()
-			,members:[Meteor.user().username]
-			,cash:0
-		       });
-	    Session.set("using_op",Ops.findOne({name:opName})._id);
-	    Session.set("isBoss",true);
-	    Session.set("show_ops",false);
-	    Players.insert({name:Meteor.user().username
-			    ,role:"Hauler"
-			    ,op:Session.get("using_op")
+	    if (!Ops.findOne({name:opName})) {
+		Ops.insert({name:opName
+			    ,boss:Meteor.userId()
+			    ,members:[Meteor.user().username]
 			    ,cash:0
 			   });
+		Session.set("using_op",Ops.findOne({name:opName})._id);
+		Session.set("isBoss",true);
+		Session.set("show_ops",false);
+		Players.insert({name:Meteor.user().username
+				,role:"Hauler"
+				,op:Session.get("using_op")
+				,payType:"Cash"
+				,payout:0
+				,rocks:{}
+			       });
+		window.setTimeout(addHaul,1000);
+		setNull()
+	    };
 	},
 	'click input.useOp' :function () {
 	    var opId = Session.get("selected_op") 
@@ -213,6 +226,7 @@ if (Meteor.isClient) {
 		    Session.set("isBoss",false);
 		};
 	    };
+	    setNull();
 	},
 	'click input.remOp' :function () {
 	    var opId = Session.get("selected_op")
@@ -237,6 +251,27 @@ if (Meteor.isClient) {
 	    return "Add";
 	};
     };
+    Template.players.selected = function (spot, value) {
+	if (Players.findOne({_id:Session.get("selected_player")})) {
+	    if (spot=="role") {
+		return (value==Players.findOne({_id:Session.get("selected_player")}).role)?"selected":""; 
+	    } else {
+		return (value==Players.findOne({_id:Session.get("selected_player")}).payType)?"selected":"";	    
+	    };
+	};
+    };
+    Template.player.pay = function (player) {
+	if (player.payType=="Cash") {
+	    return player.payout;
+	} else {
+	    var retStr = "";
+	    var rocks =Object.keys(player.payout);
+	    for (i=0;i<rocks.length;i++) {
+		retStr += rocks[i] +": "+player.payout[rocks[i]]+"<br>"
+	    };
+	    return retStr;
+	};
+    };
     Template.players.players = function () {
 	return Players.find({op:Session.get("using_op")});
     };
@@ -256,32 +291,40 @@ if (Meteor.isClient) {
 	return retArray;
     };
     Template.haulData.miner = function () {
-	var haul = Hauls.findOne({_id:Session.get("selected_haul")})
-//	try { 
-//	calcCash(haul)
-//	} catch(err) {
-//	    console.log(err,haul);
-//	};
-	var miners = haul.miners;
-	var Miners = Players.find({op:Session.get("using_op")});
-	if (miners.length < Miners.count()) {
-	    Miners.forEach(function(miner) {
-		breaker = true;
-		for (i=0;i<miners.length;i++) {
-		    if (miners[i].name==miner.name) {
-			breaker = false;
-		    };
-		};
-		if (breaker) {
-		    miners.push({name:miner.name,effort:1,cash:0})
-		};
-	    });
-	    Hauls.update(haul._id,{$set:
-				   {miners:miners}
-				  });
+	if (Session.get("selected_haul")){
+	    var haul = Hauls.findOne({_id:Session.get("selected_haul")})
+	    var miners = haul.miners;
+	    var Miners = Players.find({op:Session.get("using_op")});
+	    return miners;
 	};
-	return miners;
     };
+//	if (miners.length < Miners.count()) {
+//	    Miners.forEach(function(miner) {
+//		breaker = true;
+//		for (i=0;i<miners.length;i++) {
+//		    if (miners[i].name==miner.name) {
+//			breaker = false;
+//		    };
+//		};
+//		if (breaker) {
+////		    miners.push({name:miner.name,effort:0,cash:0,rocks:{}})
+//		};
+//	    });
+//	    Hauls.update(haul._id,{$set:
+//				   {miners:miners}
+//				  });
+//	};
+    var dynamicSort = function(property) {
+	var sortOrder = 1;
+	if(property[0] === "-") {
+            sortOrder = -1;
+            property = property.substr(1);
+	}
+	return function (a,b) {
+            var result = (a[property] < b[property]) ? -1 : (a[property] > b[property]) ? 1 : 0;
+            return result * sortOrder;
+	}
+    }
     Template.haulData.rock = function () {
 	var rocks = Hauls.findOne({_id:Session.get("selected_haul")}).rocks;
 	var Rocks = RockPrices.find({op:Session.get("using_op")});
@@ -304,7 +347,7 @@ if (Meteor.isClient) {
 //						       {rocks:rocks}
 //						      });
 	};
-	return rocks;
+	return rocks.sort(dynamicSort("name"));
     };
     Template.miner.selected = function (miner) {
 	return parseFloat(this)== Session.get("miner_Effort")?"selected":"";
@@ -318,80 +361,109 @@ if (Meteor.isClient) {
 	    };
 	}
     });
-	
-    Template.players.events({
-	'click input.AddPlayer' : function () {
-	    breaker = true;
-	    newPlayerName = document.getElementById("newPlayerName").value;
-	    Players.insert({name:newPlayerName
-			    ,role:document.getElementById("playerRole").value
-			    ,op:Session.get("using_op")
-			    ,cash:0
-			   });
-
+    newPlayer = function (newPlayerName) {
+//	if (!Players.findOne({op:Session.get("using_op"),name:newPlayerName})) {
 	    var opMembers = Ops.findOne({_id:Session.get("using_op")}).members
 	    opMembers.push(newPlayerName);
 	    Ops.update(Session.get("using_op"),{$set:
 						{members:opMembers}
-	   					       });
+	   				       });
 	    Hauls.find({op:Session.get("using_op")}).forEach(function(haul) {
 		var miners = haul.miners;
-		miners.push({name:newPlayerName,effort:1,cash:0});
+		miners.push({name:newPlayerName,effort:0,cash:0,rocks:{}});
 		Hauls.update(haul._id,{$set:
-				        {miners:miners
-					 ,totalEffort:haul.totalEffort+1}
+				       {miners:miners
+					,totalEffort:haul.totalEffort}
 				      });
 	    });
-	    calcCash();
+//	};
+//	window.setTimeout(calcCash,1000);
+    };
+    Template.players.events({
+	'click input.AddPlayer' : function () {
+	    breaker = true;
+	    newPlayerName = document.getElementById("newPlayerName").value;
+	    payPref = document.getElementById("payout").value;
+	    Players.insert({name:newPlayerName
+			    ,role:document.getElementById("playerRole").value
+			    ,op:Session.get("using_op")
+			    ,payType:payPref
+			    ,payout:("Cash"==payPref)?0:{}
+			   });
+	    window.setTimeout(function () {newPlayer(newPlayerName)}
+					   ,3000);
+//		calcCash();
+//		window.setTimeout(calcCash,1000);
 	},
 	'click input.EditPlayer' : function () {
 	    playerName = document.getElementById("newPlayerName").value;
 	    playerRole = document.getElementById("playerRole").value;
+	    payPref = document.getElementById("payout").value;
 	    Players.update(Session.get("selected_player"),{$set:
 							   {name:playerName
-							    ,role:playerRole}
+							    ,role:playerRole
+							    ,payType:payPref
+							   ,payout:(payPref=="Cash")?0:{}}
 							  })
 	    
 	},
 	'click input.removePlayer' : function () {
 	    var player = Players.findOne({_id:Session.get("selected_player")}).name;
 	    Players.remove(Session.get("selected_player"));
-	    Hauls.find({op:Session.get("using_op")}).forEach(function (haul) {
-		var oldMiners = haul.miners;
-		var newMiners = [];
-		var newEffort = 0;
-		for (i=0;i<oldMiners.length;i++) {
-		    if (oldMiners[i].name!=player) {
-			newMiners.push(oldMiners[i])
-			newEffort += oldMiners[i].effort
-		    };
+	    var oldMiners = haul.miners;
+	    var newMiners = [];
+	    var newEffort = 0;
+	    for (i=0;i<oldMiners.length;i++) {
+		if (oldMiners[i].name!=player) {
+		    newMiners.push(oldMiners[i])
+		    newEffort += oldMiners[i].effort
 		};
+	    };
+	    
+	    Hauls.find({op:Session.get("using_op")}).forEach(function (haul) {
 		Hauls.update(haul._id,{$set:
 				       {miners:newMiners
 					,totalEffort:newEffort}
 				      });
 	    });
+	    Ops.update(Session.get("using_op"),{$set:
+						{miners:newMiners}
+					       });
 	    Session.set("selected_player",undefined);
-	    calcCash();
+//	    window.setTimeout(calcCash,1000);
+	},
+	'click input.makeBoss' : function () {
+	    var newBoss = Meteor.users.findOne({username:Players.findOne({_id:Session.get("selected_player")}).name})
+	    var name = Players.findOne({_id:Session.get("selected_player")}).name;
+	    console.log(name,Meteor.users.findOne({username:"Bobby"}));
+	    console.log(newBoss);
+	    Ops.update(Session.get("using_op"), {$set:
+						 {boss:newBoss._id}
+						});
+	    Session.set("isBoss",false);
+	    setNull();
 	}
     });
+    var addHaul = function () {
+	var op = Session.get("using_op")
+	var rocks = [];
+	var Rocks = RockPrices.find({op:op})
+	Rocks.forEach(function (rock) {
+	    rocks.push({name:rock.name
+			,num:0
+			,cash:0
+		       })
+	});
+	var miners = [];
+	Players.find({op:op}).forEach(function (player){
+	    miners.push({name:player.name,effort:1,cash:0,rocks:{}})
+	});
+	var number = Hauls.find({op:op}).count()+1;
+	Hauls.insert({number:number,op:op,miners:miners,number:number,rocks:rocks,cash:0,totalEffort:0});
+    };
     Template.hauls.events({
 	'click input.addNewHaul' : function () {
-	    var op = Session.get("selected_op")
-	    var rocks = [];
-	    var Rocks = RockPrices.find({op:op})
-	    Rocks.forEach(function (rock) {
-		rocks.push({name:rock.name
-			    ,num:0
-			    ,cash:0
-			   })
-	    });
-	    var miners = [];
-	    Players.find({op:op}).forEach(function (player){
-		miners.push({name:player.name,effort:1,cash:0})
-	    });
-	    var number = Hauls.find({op:op}).count()+1;
-	    Hauls.insert({number:number,op:op,miners:miners,number:number,rocks:rocks,cash:0,totalEffort:0});
+	    addHaul();
 	}
     });
     Template.rock.events({
@@ -417,7 +489,7 @@ if (Meteor.isClient) {
     Template.addRock.events({
 	'click input.addRock' : function () {
 	    rock = document.getElementById("rockDropDown").value;
-	    value = document.getElementById("addRockPrice").value;
+	    value = parseFloat(document.getElementById("addRockPrice").value);
 	    for(var i = 0, m = null; i < rockDefaults.length; ++i) {
 		if(rockDefaults[i].name != rock) {
 		    continue; 
@@ -426,26 +498,27 @@ if (Meteor.isClient) {
 		defaultValue = rockDefaults[i].price;
 		break;
 	    };
-	    var val = value? value:defaultValue;
+	    var val = value? parseFloat(value):parseFloat(defaultValue);
 	    RockPrices.insert({name:rock,
 			       density:density,
 			       price: val,
-			       value:(val/density).toFixed(2),
+			       value:parseFloat((val/density).toFixed(2)),
 			       op:Session.get("using_op")
 			      });
 	}
     });
     Template.editPrice.events({
 	'click input.editRock' : function () {
-	    var nuPrice = document.getElementById("newPrice").value;
+	    var nuPrice = parseFloat(document.getElementById("newPrice").value);
 	    var density = RockPrices.findOne(Session.get("selected_rock")).density;
 	    RockPrices.update(Session.get("selected_rock"),{$set:
 							    {price:nuPrice
 							     ,value:nuPrice/density}
 							   });
-	    calcCash()
+//	    window.setTimeout(calcCash,1000)
 	}
     });
+
     Template.haulData.events({
 	'click input.applyHaulData' : function () {
 	    var haul = Hauls.findOne({_id:Session.get("selected_haul")});
@@ -472,21 +545,58 @@ if (Meteor.isClient) {
 			       ,rocks:rocks
 			       ,totalEffort:totalEffort
 			      }});
-	    calcCash();
 	}
     });
 }
 
-var rockDefaults = [{name:"Kernite",density:1.2,price:189}
-		   ,{name:"Luminous Kernite",density:1.2,price:201}
-		   ,{name:"Fiery Kernite",density:1.2,price:210}
-		   ,{name:"Scordite",density:.15,price:22}
-		   ,{name:"Condensed Scordite",density:.15,price:24}
-		   ,{name:"Massive Scordite",density:.15,price:26}
-		   ,{name:"Pyroxeres",density:0.3,price:48}
-		   ,{name:"Solid Pyroxeres",density:0.3,price:50}
-		   ,{name:"Viscous Pyroxeres",density:0.3,price:52}
-//		   ,{name:"",density:0,price:0}
+var rockDefaults = [{name:"Veldspar",density:0.1,price:13.7}
+		    ,{name:"Concentrated Veldspar",density:0.1,price:14}
+		    ,{name:"Dense Veldspar",density:0.1,price:14.9}
+		    ,{name:"Kernite",density:1.2,price:189}
+		    ,{name:"Luminous Kernite",density:1.2,price:201}
+		    ,{name:"Fiery Kernite",density:1.2,price:210}
+		    ,{name:"Scordite",density:.15,price:22}
+		    ,{name:"Condensed Scordite",density:.15,price:24}
+		    ,{name:"Massive Scordite",density:.15,price:26}
+		    ,{name:"Pyroxeres",density:0.3,price:48}
+		    ,{name:"Solid Pyroxeres",density:0.3,price:50}
+		    ,{name:"Viscous Pyroxeres",density:0.3,price:52}
+		    ,{name:"Arkonor",density:16,price:3017}
+		    ,{name:"Crimson Arkonor",density:16,price:3135}
+		    ,{name:"Prime Arkonor",density:16,price:3255}
+		    ,{name:"Bistot",density:16,price:2884}
+		    ,{name:"Monoclinic Bistot",density:16,price:3048}
+		    ,{name:"Triclinic Bistot",density:16,price:3200}
+		    ,{name:"Dark Ochre",density:8,price:1194}
+		    ,{name:"Onyx Ochre",density:8,price:1300}
+		    ,{name:"Obsidian Ochre",density:8,price:1400}
+		    ,{name:"Crokite",density:16,price:2775}
+		    ,{name:"Crystalline Crokite",density:16,price:2850}
+		    ,{name:"Sharp Crokite",density:16,price:2900}
+		    ,{name:"Gneiss",density:5,price:847}
+		    ,{name:"Iridescent Gneiss",density:5,price:900}
+		    ,{name:"Prismatic Gneiss",density:5,price:950}
+		    ,{name:"Hedbergite",density:3,price:600}
+		    ,{name:"Glazed Hedbergite",density:3,price:660}
+		    ,{name:"Vitric Hedbergite",density:3,price:700}
+		    ,{name:"Hemorphite",density:3,price:600}
+		    ,{name:"Radiant Hemorphite",density:3,price:645}
+		    ,{name:"Vivid Hemorphite",density:3,price:700}
+		    ,{name:"Jaspet",density:2,price:370}
+		    ,{name:"Pristine Jaspet",density:2,price:400}
+		    ,{name:"Pure Jaspet",density:2,price:385}
+		    ,{name:"Mercoxit",density:40,price:5000}
+		    ,{name:"Magma Mercoxit",density:40,price:5200}
+		    ,{name:"Vitreous Mercoxit",density:40,price:5400}
+		    ,{name:"Omber",density:0.6,price:70}
+		    ,{name:"Silvery Omber",density:0.6,price:75}
+		    ,{name:"Golden Omber",density:0.6,price:80}
+		    ,{name:"Plagioclase",density:0.35,price:47}
+		    ,{name:"Azure Plagioclase",density:0.35,price:50}
+		    ,{name:"Rich Plagioclase",density:0.35,price:53}
+		    ,{name:"Spodumain",density:16,price:2000}
+		    ,{name:"Bright Spodumain",density:16,price:2200}
+		    ,{name:"Gleaming Spodumain",density:16,price:2400}
 		   ];
 
 
@@ -506,6 +616,9 @@ if (Meteor.isServer) {
 	});
 	Meteor.publish("Hauls",function () {
 	    return Hauls.find({});
+	});
+	Meteor.publish("userdata",function () {
+	    return Meteor.users.find({});
 	});
 	RockPrices.allow({
 	    insert: function (userID,rock) {
@@ -588,7 +701,7 @@ if (Meteor.isServer) {
 		    return false;
 		};		
 		Players.find({}).forEach(function (player) {
-		    if (player.name == editPlayer['name']) {
+		    if (player.name == editPlayer['name'] && player.name != oldPlayer.name) {
 			breaker = false;
 		    };
 		});
@@ -617,6 +730,7 @@ if (Meteor.isServer) {
 	if (Rocks.find({}).count() != rockDefaults.length) {
 	    for (var i=0;i<rockDefaults.length;i++) {
 		breaker = true
+		var rock = rockDefaults[i];
 		RockPrices.find({}).forEach(function(rocker) {
 		    if(rocker.name == rock.name && rocker.op == rock.op) {
 			breaker = false;
