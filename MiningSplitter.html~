@@ -1,0 +1,276 @@
+<head>
+  <title>(EMOPS) EVE Mining Operation Profit Splitter</title>
+</head>
+
+<body>
+  {{> Main}}
+</body>
+
+<template name="Main">
+  {{#if Trusted}}
+    {{#if Test}}
+      {{#if currentUser}}
+       {{ship}}
+        {{> Details}}
+      {{else}}
+        {{> Login}}
+      {{/if}}
+    {{else}}
+      Please use the EVE in-game browser to use this tool!
+    {{/if}}
+  {{else}}
+    {{TrustMe}}
+    Please refresh this page after granting trust!<br>
+    <input type="button" class="Refresher" onclick="refresh()" value="Refresh Page">
+  {{/if}}
+</template>
+
+<template name="Details">
+  <input type="button" class="showOps" value="{{showHideOps}} Operation Details">
+  {{#if session "using_op"}}
+    <br> <br> Using Operation: {{usedOp}}<br>
+    Operation Profit: {{opCash}}
+  {{/if}} <br>
+  {{#if session "show_ops"}}
+    {{> opDisplay}}
+  {{/if}} <br>
+  {{#if session "using_op"}}
+    <input type="button" class="showAddRock" value="{{showHideRocks}} Rock Price Table"><br>
+    {{#if session "add_rock"}}
+      {{> rockPriceDisplay}}
+    {{/if}}<br>
+    <input type="button" class="showPlayers" value="{{showHidePlayers}} Player Table"><br>
+    {{#if session "show_players"}}
+      {{> players}}
+    {{/if}}
+    <br>
+    <input type="button" class="showHauls" value="{{showHideHauls}} Haul Table"><br>
+    {{#if session "show_hauls"}}
+      {{> hauls}}
+    {{/if}}
+  {{/if}}
+</template>
+<template name="opDisplay">
+  <br>
+  <div class="operationTitle">
+    <span class="name">Operation Name</span>
+    <span class="isBoss">Are You Boss?</span>
+  </div>
+  <div class="operations">
+    
+    {{#each operations}}
+    {{> operation}}
+    {{/each}}
+    {{#if session "selected_op"}}
+    <br>
+    <input type="button" class="useOp" value="{{useOrDont}} Selected Operation">
+    <input type="button" class="remOp" value="Delete Selected Operation">
+    <br>
+    <input type="button" class="showData" value="Show Text Field for Pasting Into EVE Message"><br>
+    {{/if}}
+    {{#if session "showData"}}
+    <br>
+    <div class="pasteData">
+      {{{pasteData}}}
+    </div>
+    {{/if}}
+    <br>
+    Add New Operation:<br><br>
+    <input type="text" id="newOpName">
+    <select id="newOpSplit">
+      <option value="Individual">Individual</option>
+      <option value="Cooperative">Cooperative</option>
+    </select>
+    <input type="button" class="addOp" value="Start Operation">
+  </div>
+</template>
+
+<template name="operation">
+  <div class="operation {{selected}}">
+    <span class="name">{{name}}</span>
+    <span class="isBoss">{{isBoss}}</span>
+  </div>
+</template>
+
+<template name="player">
+  <div class="player {{selected}}">
+    <span class="name">{{name}}</span>
+    <span class="payType">{{payType}}</span>
+    <span class="role">{{role}}</span>
+    <span class="pay">{{{pay this}}}</span>
+  </div>
+</template>
+
+<template name="players">
+  <br>
+  <div class="playersTitle">
+    <span class="nameTitle">Name</span>
+    <span class="payTitle">Pay Type</span>
+    <span class="roleTitle">Role</span>
+    <span class="payout">Pay Out</span>
+  </div>
+  <div class="players">
+    {{#each players}}
+    {{> player}}
+    {{/each}}
+    {{#if session "isBoss"}}
+    <br>
+    {{addEdit}} Player:
+    <br>
+    <input type="text" id="newPlayerName" value="{{playerName.name}}">
+    <select id="playerRole">
+      <option value="Miner" {{selected "role" "Miner"}}>Miner</option>
+      <option value="Hauler" {{selected "role" "Hauler"}}>Hauler</option>
+      <option value="Security" {{selected "role" "Security"}}>Security</option>
+    </select>
+    <select id="payout">
+      <option value="Cash" {{selected "payout" "Cash"}}>Cash</option>
+      <option value="Ore" {{selected "payout" "Ore"}}>Ore</option>
+    </select>
+    <input type="button" class="{{addEdit}}Player" value="{{addEdit}} Player">
+    {{#if session "selected_player"}}
+    <input type="button" class="makeBoss" value="Make Player Boss of Op">
+    <input type="button" class="removePlayer" value="Remove Player">
+    {{/if}}
+    {{/if}}
+  </div>
+</template>
+
+
+<template name="hauls">
+  <br>
+  <div class="hauls">
+    <div class="haulHeader">
+      <span class="haulHead">Haul Number</span>
+      <span class="cash">Cash Made</span>
+    </div>
+    {{#each hauls}}
+    {{> haul}}
+    {{/each}}
+    {{#if session "selected_haul"}}
+    <br>
+    {{> haulData}}
+    <br>
+    {{/if}}
+    {{#if session "isBoss"}}
+    <br>
+    <input type="button" class="addNewHaul" value="Add New Haul"><br>
+    {{/if}}
+  </div>
+</template>
+
+<template name="haul">
+  <div class="haul {{selected}}">
+    <span class="haulNumber">{{number}}</span>
+    <span class="cash">{{cash}}</span>
+  </div>
+</template>
+
+<template name="haulData">
+  <div class="minerDataHeader">
+    <span class="minerHead">Participant</span>
+    <span class="cashHead">Split</span>
+    <span class="effort">Effort Score(0.0-1.0)</span>
+  </div>
+  {{#each miner}}
+  {{> miner}}
+  {{/each}}<br>
+  <div class="rockDataHeader">
+    <span class="rockDataName">Rock Name</span>
+    <span class="rockNumbers">Number of Rock</span>
+    <span class="rockCash">Cash from Rock</span>
+  </div>
+  {{#each rock}}
+  {{> rockData}}
+  {{/each}}
+  {{#if session "isBoss"}}
+  <br>
+  <input type="button" class="applyHaulData" value="Apply Rock Data to Haul">
+  {{/if}}
+</template>
+
+<template name="rockData">
+  <div class="rockData">
+    <span class="rockName">{{name}}</span>
+    <input type="text" class="rockNum" id="{{name}}_num" value="{{num}}">
+    <span class="rockCash">{{cash}}</span>
+  </div>
+</template>
+
+<template name="miner">
+  <div class="miner">
+    <span class="minerName">{{name}}</span>
+    <span class="cash">{{cash}}</span>
+    <input type="text" class="minerEffort" id="{{name}}_effort" value="{{effort}}">
+  </div>
+</template>
+
+<template name="rockPriceDisplay">
+  <br>
+  <div class="rockLabel">
+    <span class="name">Rock Name</span>
+    <span class="density">Density</span>
+    <span class="price">Price per Rock</span>
+    <span class="value">Price per m^3</span>
+  </div>
+  {{#each rock}}
+  {{> rock}}
+  {{/each}}
+  <br>
+  {{#if session "isBoss"}}
+  {{#if session "selected_rock"}}
+  {{> editPrice}}
+  {{else}}
+  {{> addRock}}
+  {{/if}}
+  {{/if}}
+</template>
+
+<template name="rock">
+  <div class="rock {{selected}}">
+    <span class="name">{{name}}</span>
+    <span class="density">{{density}}</span>
+    <span class="price">{{price}}</span>
+    <span class="value">{{value}}</span>
+  </div>      
+</template>
+
+<template name="editPrice">
+  <div class="priceEditor">
+    <span class="name">New price for: <br>{{nameFinder}}</span>
+    <input type="text" id="newPrice" value="{{priceFinder}}">
+    <input type="button" class="editRock" value="Submit New Price">
+  </div>
+</template>
+
+<template name="addRock">
+  <div class="addRock">
+    Add rock price: <br>
+    <select required id="rockDropDown">>
+      <option value="null"></option>
+      {{#each rock}}
+      <option value="{{this.name}}">{{this.name}}</option>
+      {{/each}}
+      <input type="text" id="addRockPrice">
+      <input type="button" class="addRock" value="Add Rock Price">
+    </select>
+</template>
+
+<template name="Login">
+  <div class="login">
+  {{#if hasAcct}}
+    Please provide the password for this character [{{session "username"}}] to use EMOPS.<br>
+    Password:
+  {{else}}
+    Please register your character [{{session "username"}}] with an EMOPS account for proper functionality.<br>
+    DO NOT use your EVE password for this tool!<br>
+    Password:<br>
+    <input type="password" id="passCheck"><br>
+    Please Repeat Password:
+  {{/if}}
+  <br>
+  <input type="password" id="passWord"><br>
+  <span class="error">{{{error}}}</span>
+  <input type="button" class="Login" value="{{#if hasAcct}}Login{{else}}Register{{/if}}">
+  </div>
+</template>
